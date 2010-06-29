@@ -1,6 +1,5 @@
 package com.vercer.engine.persist.standard;
 
-import java.io.NotSerializableException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.ArrayDeque;
@@ -17,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
@@ -37,7 +37,7 @@ import com.vercer.engine.persist.Path;
 import com.vercer.engine.persist.Property;
 import com.vercer.engine.persist.PropertyTranslator;
 import com.vercer.engine.persist.StoreCommand;
-import com.vercer.engine.persist.conversion.CombinedTypeConverter;
+import com.vercer.engine.persist.annotation.Id;
 import com.vercer.engine.persist.conversion.DefaultTypeConverter;
 import com.vercer.engine.persist.conversion.TypeConverter;
 import com.vercer.engine.persist.strategy.ActivationStrategy;
@@ -56,6 +56,7 @@ import com.vercer.engine.persist.translator.ObjectFieldTranslator;
 import com.vercer.engine.persist.translator.PolymorphicTranslator;
 import com.vercer.engine.persist.util.Entities;
 import com.vercer.engine.persist.util.PropertySets;
+import com.vercer.util.Reflection;
 import com.vercer.util.reference.ObjectReference;
 
 /**
@@ -237,6 +238,23 @@ public class StrategyObjectDatastore extends BaseObjectDatastore
 		return result;
 	}
 
+	// TODO put this in a class meta data object
+	private static final Map<Class<?>, Field> keyFields = new ConcurrentHashMap<Class<?>, Field>();
+	
+	// null values are not permitted in a concurrent hash map so need a "missing" value
+	private static final Field NO_KEY_FIELD;
+	static
+	{
+		try
+		{
+			NO_KEY_FIELD = StrategyObjectDatastore.class.getDeclaredField("NO_KEY_FIELD");
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException(e);
+		}
+	}
+	
 	/**
 	 * Potentially store an entity in the datastore.
 	 */
@@ -648,7 +666,69 @@ public class StrategyObjectDatastore extends BaseObjectDatastore
 		
 		// replace the temp key ObjRef with the full key for this instance 
 		keyCache.cache(key, instance);
+		
+		setInstanceId(instance, key);
+		
 		return key;
+	}
+
+	@SuppressWarnings("deprecation")
+	private void setInstanceId(Object instance, Key key)
+	{
+		// TODO share fields with ObjectFieldTranslator
+		Field idField = null;
+		if (keyFields.containsKey(instance.getClass()))
+		{
+			idField = keyFields.get(instance.getClass());
+		}
+		else
+		{
+			List<Field> fields = Reflection.getAccessibleFields(instance.getClass());
+			for (Field field : fields)
+			{
+				if (field.isAnnotationPresent(com.vercer.engine.persist.annotation.Key.class) ||
+					field.isAnnotationPresent(Id.class))
+				{
+					idField = field;
+					break;
+				}
+			}
+			
+			if (idField == null)
+			{
+				idField = NO_KEY_FIELD;
+			}
+			keyFields.put(instance.getClass(), idField);
+		}
+		
+		try
+		{
+			// if there is a key field
+			if (idField != NO_KEY_FIELD)
+			{
+				// see if its current value is null or 0
+				Object current = idField.get(instance);
+				if (current == null || current instanceof Number && ((Number) current).longValue() == 0)
+				{
+					Class<?> type = idField.getType();
+					Object idOrName = key.getId();
+					
+					// the key name could have been set explicitly when storing 
+					if (idOrName == null)
+					{
+						idOrName = key.getName();
+					}
+					
+					// convert the long or String to the declared key type
+					Object converted = converter.convert(idOrName, type);
+					idField.set(instance, converted);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException(e);
+		}
 	}
 	
 	@Override

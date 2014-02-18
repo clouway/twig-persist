@@ -7,7 +7,7 @@
 	<version>2.0-beta6</version>
 
 	<properties>
-		<appengine.version>1.6.4</appengine.version>
+		<appengine.version>1.8.9</appengine.version>
 		<guice.version>3.0</guice.version>
 	</properties>
 
@@ -15,7 +15,7 @@
 		<dependency>
 		    <groupId>com.google.guava</groupId>
 		    <artifactId>guava</artifactId>
-		    <version>14.0</version>
+		    <version>16.0.1</version>
 		</dependency>
 
 		<dependency>

@@ -47,6 +47,7 @@ public final class StandardSingleStoreCommand<T> extends StandardCommonStoreComm
 		
 		// when associating we might not activate the instance
 		datastore.keyCache.cache(key, instance, 1);
+    datastore.entitiesInTransaction.put(key, instance);
 		
 		return key;
 	}

@@ -971,7 +971,7 @@ public abstract class BaseObjectDatastore implements ObjectDatastore
 		return transaction;
 	}
 
-	public final Transaction beginTransaction()
+	public Transaction beginTransaction()
 	{
 		if (getTransaction() != null && getTransaction().isActive())
 		{

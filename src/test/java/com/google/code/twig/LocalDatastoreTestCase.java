@@ -6,20 +6,19 @@ import org.junit.Before;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
-public abstract class LocalDatastoreTestCase 
-{
-    private final LocalServiceTestHelper helper =
-        new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig()); //.setDefaultHighRepJobPolicyUnappliedJobPercentage(1));
+public abstract class LocalDatastoreTestCase {
 
-    @Before
-    public void setupDatastore() 
-    {
-        helper.setUp();
-    }
+  private final LocalServiceTestHelper helper =
+          new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig()
+                  .setApplyAllHighRepJobPolicy());
 
-    @After
-    public void tearDownDatastore() 
-    {
-        helper.tearDown();
-    }
+  @Before
+  public void setupDatastore() {
+    helper.setUp();
+  }
+
+  @After
+  public void tearDownDatastore() {
+    helper.tearDown();
+  }
 }

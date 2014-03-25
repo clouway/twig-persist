@@ -9,11 +9,11 @@ import java.util.Locale;
 
 import com.google.code.twig.annotation.Child;
 import com.google.code.twig.annotation.Id;
-import com.google.code.twig.annotation.Type;
 
 public class Band
 {
-	enum HairStyle { LONG_LIKE_A_GIRL, UNKEMPT_FLOPPY, NAVY_SHORT, BALD };
+
+  enum HairStyle { LONG_LIKE_A_GIRL, UNKEMPT_FLOPPY, BALD }
 
 	@Id
 	String name;
@@ -24,7 +24,15 @@ public class Band
 
 	@Child List<Album> albums;
 	Band.HairStyle hair;
-	
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
+
 	@Override
 	public String toString()
 	{

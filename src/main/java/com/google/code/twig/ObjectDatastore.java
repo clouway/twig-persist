@@ -1,6 +1,7 @@
 package com.google.code.twig;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -169,7 +170,7 @@ public interface ObjectDatastore extends Activator
 	 * @return The Key that is associated with this instance.
 	 */
 	Key associatedKey(Object instance);
-	
+
 
 	<T> T associatedInstance(Key key);
 
@@ -189,4 +190,12 @@ public interface ObjectDatastore extends Activator
 	DatastoreService getDefaultService();
 
 	long version(Object instance);
+
+  /**
+   * Logs the {@link com.google.appengine.api.datastore.Key} of the entities
+   * that are included in the execution of the current transaction.
+   *
+   * @return a list of {@link com.google.appengine.api.datastore.Key}s
+   */
+  List<Key> logTransactionEntityGroups();
 }

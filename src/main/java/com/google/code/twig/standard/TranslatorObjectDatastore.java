@@ -3,17 +3,9 @@ package com.google.code.twig.standard;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.FetchOptions;
@@ -21,6 +13,7 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.QueryResultIterator;
+import com.google.appengine.api.datastore.Transaction;
 import com.google.code.twig.LoadCommand.CacheMode;
 import com.google.code.twig.Path;
 import com.google.code.twig.Property;
@@ -38,6 +31,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.vercer.convert.TypeConverter;
@@ -47,6 +41,8 @@ import com.vercer.convert.TypeConverter;
  */
 public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 {
+  private static final Logger log = Logger.getLogger(TranslatorObjectDatastore.class.getName());
+
 	// keeps track of which instances are associated with which keys
 	protected final KeyInstanceCache keyCache = new KeyInstanceCache();
 
@@ -68,6 +64,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 
 	private static final Map<Class<?>, Field> idFields = new ConcurrentHashMap<Class<?>, Field>();
 	private static final Map<Class<?>, Field> keyFields = new ConcurrentHashMap<Class<?>, Field>();
+  protected final Map<Key, Object> transactionEntityGroups = new HashMap<Key, Object>();
 
 	/**************State fields********************/
 
@@ -312,7 +309,30 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 		deleteKeys(Collections2.transform(instances, cachedInstanceToKeyFunction));
 	}
 
-	/**
+  /**
+   * Logs the {@link com.google.appengine.api.datastore.Key} of the entities
+   * that are included in the execution of the current transaction.
+   *
+   * @return a list of {@link com.google.appengine.api.datastore.Key}s
+   */
+  public List<Key> logTransactionEntityGroups() {
+
+    for (Key key : transactionEntityGroups.keySet()) {
+      log.info("Entity Kind: " + key.getKind() + ", Entity Name: " + key.getName());
+    }
+
+    return Lists.newArrayList(transactionEntityGroups.keySet());
+  }
+
+  @Override
+  public Transaction beginTransaction() {
+
+    transactionEntityGroups.clear();
+
+    return super.beginTransaction();
+  }
+
+  /**
 	 * The first extension point called to get the decode translator
 	 * @return {@link #translator(Class)}
 	 */
@@ -822,6 +842,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 			if (keyCache.containsKey(key))
 			{
 				keyCache.evictKey(key);
+        transactionEntityGroups.put(key, "");
 			}
 		}
 	}
@@ -949,6 +970,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 				{
 					// we have not activated the instance yet
 					keyCache.cache(decodeKey, result, 0);
+          transactionEntityGroups.put(decodeKey, result);
 				}
 			}
 			else

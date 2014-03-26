@@ -317,11 +317,28 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
    */
   public List<Key> logTransactionEntityGroups() {
 
-    for (Key key : transactionEntityGroups.keySet()) {
-      log.info("Entity Kind: " + key.getKind() + ", Entity Name: " + key.getName());
+    if (transactionIsActive()) {
+
+      for (Key key : transactionEntityGroups.keySet()) {
+        log.info("Entity: " + key.toString());
+      }
+
+      return Lists.newArrayList(transactionEntityGroups.keySet());
     }
 
-    return Lists.newArrayList(transactionEntityGroups.keySet());
+    return Lists.newArrayList();
+  }
+
+  /**
+   * Checks if there is an active transaction.
+   *
+   * @return true if there is an active transaction, otherwise false
+   */
+  private boolean transactionIsActive() {
+
+    Transaction transaction = getTransaction();
+
+    return transaction != null && transaction.isActive();
   }
 
   @Override

@@ -309,6 +309,16 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
     datastore.getTransaction().commit();
   }
 
+  @Test
+  public void storeEntityWhenThereIsNoActiveTransaction() {
+
+    datastore.store(aNewBand().withName("Band 1"));
+
+    List<Key> keys = datastore.logTransactionEntityGroups();
+
+    assertThat(keys.size(), is(0));
+  }
+
   static class BandBuilder {
     
     private String name;

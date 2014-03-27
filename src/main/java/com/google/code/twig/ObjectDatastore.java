@@ -192,10 +192,16 @@ public interface ObjectDatastore extends Activator
 	long version(Object instance);
 
   /**
-   * Logs the {@link com.google.appengine.api.datastore.Key} of the entities
-   * that are included in the execution of the current transaction.
+   * Logs all entities that are involved in the current transaction
    *
-   * @return a list of {@link com.google.appengine.api.datastore.Key}s
+   * @return a list of {@link com.google.appengine.api.datastore.Key} of the entities
    */
-  List<Key> logTransactionEntityGroups();
+  List<Key> logEntitiesInTransaction();
+
+  /**
+   * Logs all entity groups that are included in a transaction.
+   *
+   * @return a list of {@link com.google.appengine.api.datastore.Key} of the entity groups
+   */
+  List<Key> logEntityGroupsInTransaction();
 }

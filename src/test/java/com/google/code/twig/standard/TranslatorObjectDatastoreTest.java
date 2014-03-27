@@ -17,7 +17,7 @@ import com.google.code.twig.test.space.RocketShip;
 import com.google.code.twig.test.space.SpaceStation;
 import com.google.code.twig.test.space.RocketShip.Planet;
 
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.google.code.twig.standard.TranslatorObjectDatastoreTest.BandBuilder.aNewBand;
@@ -31,21 +31,21 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
   private AnnotationObjectDatastore datastore;
 
-	@Before
-	public void createDatastore() {
-		this.datastore = new AnnotationObjectDatastore();
-	}
+  @Before
+  public void createDatastore() {
+    this.datastore = new AnnotationObjectDatastore();
+  }
 
-	@Test
-	public void associateObjectWithSameKey() {
-		// create and store a station
-		SpaceStation station = new SpaceStation("behemoth");
-		datastore.store(station);
-		
-		// associating a new station with the same key will return the same instance
-		SpaceStation associated = datastore.associate(new SpaceStation("behemoth"));
-		Assert.assertSame(station, associated);
-	}
+  @Test
+  public void associateObjectWithSameKey() {
+    // create and store a station
+    SpaceStation station = new SpaceStation("behemoth");
+    datastore.store(station);
+
+    // associating a new station with the same key will return the same instance
+    SpaceStation associated = datastore.associate(new SpaceStation("behemoth"));
+    Assert.assertSame(station, associated);
+  }
 
   @Test
   public void associateGraphWithSameKey() {
@@ -115,7 +115,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
     datastore.beginTransaction();
 
-    List<Key> keys = datastore.logTransactionEntityGroups();
+    List<Key> keys = datastore.logEntitiesInTransaction();
 
     assertThat(keys.size(), is(0));
 
@@ -123,7 +123,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
   }
 
   @Test
-  public void storeMoreThanFiveEntityGroups() {
+  public void storeMoreThanFiveEntities() {
 
     datastore.beginTransaction();
 
@@ -140,7 +140,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
       log.info("Exception: " + e.getMessage());
 
-      List<Key> entityGroupsKeys = datastore.logTransactionEntityGroups();
+      List<Key> entityGroupsKeys = datastore.logEntitiesInTransaction();
 
       assertThat(entityGroupsKeys.size(), is(5));
     }
@@ -150,7 +150,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
   @Test
   public void executeManyTransactionConsequently() {
-    
+
     datastore.beginTransaction();
 
     datastore.store(aNewBand().withName("Band 1").build());
@@ -164,7 +164,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
     Band band = aNewBand().withName("Band 3").build();
     Key bandKey = datastore.store(band);
 
-    List<Key> keys = datastore.logTransactionEntityGroups();
+    List<Key> keys = datastore.logEntitiesInTransaction();
 
     datastore.getTransaction().commit();
 
@@ -211,7 +211,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
       log.info(e.getMessage());
 
-      List<Key> keys = datastore.logTransactionEntityGroups();
+      List<Key> keys = datastore.logEntitiesInTransaction();
 
       assertThat(keys.size(), is(5));
     }
@@ -257,7 +257,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
       log.info(e.getMessage());
 
-      List<Key> keys = datastore.logTransactionEntityGroups();
+      List<Key> keys = datastore.logEntitiesInTransaction();
 
       assertThat(keys.size(), is(5));
     }
@@ -301,7 +301,7 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
       log.info(e.getMessage());
 
-      List<Key> keys = datastore.logTransactionEntityGroups();
+      List<Key> keys = datastore.logEntitiesInTransaction();
 
       assertThat(keys.size(), is(5));
     }
@@ -314,29 +314,51 @@ public class TranslatorObjectDatastoreTest extends LocalDatastoreTestCase {
 
     datastore.store(aNewBand().withName("Band 1"));
 
-    List<Key> keys = datastore.logTransactionEntityGroups();
+    List<Key> keys = datastore.logEntitiesInTransaction();
 
     assertThat(keys.size(), is(0));
   }
 
+  @Test
+  public void logEntityGroupsInTransaction() {
+
+    Band bandOne = aNewBand().withName("Band 1").build();
+
+    datastore.beginTransaction();
+
+    datastore.store(bandOne);
+
+    datastore.store().instance(aNewBand().withName("Band 2").build())
+            .parent(bandOne)
+            .now();
+
+    datastore.store(aNewBand().withName("Band 3").build());
+
+    List<Key> entityGroups = datastore.logEntityGroupsInTransaction();
+
+    datastore.getTransaction().commit();
+
+    assertThat(entityGroups.size(), is(2));
+  }
+
   static class BandBuilder {
-    
+
     private String name;
-    
+
     public static BandBuilder aNewBand() {
       return new BandBuilder();
     }
-    
+
     public BandBuilder withName(String name) {
       this.name = name;
       return this;
     }
-    
+
     public Band build() {
-      
+
       Band band = new Band();
       band.setName(name);
-      
+
       return band;
     }
   }

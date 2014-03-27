@@ -64,7 +64,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 
 	private static final Map<Class<?>, Field> idFields = new ConcurrentHashMap<Class<?>, Field>();
 	private static final Map<Class<?>, Field> keyFields = new ConcurrentHashMap<Class<?>, Field>();
-  protected final Map<Key, Object> transactionEntityGroups = new HashMap<Key, Object>();
+  protected final Map<Key, Object> entitiesInTransaction = new HashMap<Key, Object>();
 
 	/**************State fields********************/
 
@@ -310,23 +310,60 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 	}
 
   /**
-   * Logs the {@link com.google.appengine.api.datastore.Key} of the entities
-   * that are included in the execution of the current transaction.
+   * Logs all entities that are involved in the current transaction
    *
-   * @return a list of {@link com.google.appengine.api.datastore.Key}s
+   * @return a list of {@link com.google.appengine.api.datastore.Key} of the entities
    */
-  public List<Key> logTransactionEntityGroups() {
+  public List<Key> logEntitiesInTransaction() {
 
     if (transactionIsActive()) {
 
-      for (Key key : transactionEntityGroups.keySet()) {
+      for (Key key : entitiesInTransaction.keySet()) {
         log.info("Entity: " + key.toString());
       }
 
-      return Lists.newArrayList(transactionEntityGroups.keySet());
+      return Lists.newArrayList(entitiesInTransaction.keySet());
     }
 
     return Lists.newArrayList();
+  }
+
+  /**
+   * Logs all entity groups that are included in a transaction.
+   *
+   * @return a list of {@link com.google.appengine.api.datastore.Key} of the entity groups
+   */
+  @Override
+  public List<Key> logEntityGroupsInTransaction() {
+
+    List<Key> loggedEntityGroups = Lists.newArrayList();
+
+    if (transactionIsActive()) {
+
+      List<Key> entityGroups = Lists.newArrayList(entitiesInTransaction.keySet());
+
+      Collections.sort(entityGroups, new Comparator<Key>() {
+        @Override
+        public int compare(Key o1, Key o2) {
+          return o1.toString().compareTo(o2.toString());
+        }
+      });
+
+
+      for (Key entityGroup : entityGroups) {
+
+        if (!loggedEntityGroups.toString().contains(entityGroup.toString().split("/")[0])) {
+          loggedEntityGroups.add(entityGroup);
+        }
+      }
+
+      log.info("Entity Groups Count: " + loggedEntityGroups.size());
+      for (Key loggedEntityGroup : loggedEntityGroups) {
+        log.info("Entity Group: " + loggedEntityGroup);
+      }
+    }
+
+    return loggedEntityGroups;
   }
 
   /**
@@ -344,7 +381,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
   @Override
   public Transaction beginTransaction() {
 
-    transactionEntityGroups.clear();
+    entitiesInTransaction.clear();
 
     return super.beginTransaction();
   }
@@ -859,7 +896,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 			if (keyCache.containsKey(key))
 			{
 				keyCache.evictKey(key);
-        transactionEntityGroups.put(key, "");
+        entitiesInTransaction.put(key, "");
 			}
 		}
 	}
@@ -987,7 +1024,7 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 				{
 					// we have not activated the instance yet
 					keyCache.cache(decodeKey, result, 0);
-          transactionEntityGroups.put(decodeKey, result);
+          entitiesInTransaction.put(decodeKey, result);
 				}
 			}
 			else

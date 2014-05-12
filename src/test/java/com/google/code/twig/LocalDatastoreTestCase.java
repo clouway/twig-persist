@@ -1,25 +1,30 @@
 package com.google.code.twig;
 
+import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
+import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.code.twig.annotation.AnnotationConfiguration;
+import com.google.code.twig.standard.StandardObjectDatastore;
 import org.junit.After;
 import org.junit.Before;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+public abstract class LocalDatastoreTestCase {
 
-public abstract class LocalDatastoreTestCase 
-{
-    private final LocalServiceTestHelper helper =
-        new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig()); //.setDefaultHighRepJobPolicyUnappliedJobPercentage(1));
+  private final LocalServiceTestHelper helper =
 
-    @Before
-    public void setupDatastore() 
-    {
-        helper.setUp();
-    }
+          new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig().setDefaultHighRepJobPolicyUnappliedJobPercentage(0.01f));
 
-    @After
-    public void tearDownDatastore() 
-    {
-        helper.tearDown();
-    }
+  @Before
+  public void setupDatastore() {
+    helper.setUp();
+  }
+
+  @After
+  public void tearDownDatastore() {
+    helper.tearDown();
+  }
+
+  public StandardObjectDatastore getNewStandardObjectDatastore() {
+    Settings settings = Settings.builder().build();
+    return new StandardObjectDatastore(settings, new AnnotationConfiguration(), 1000, true);
+  }
 }

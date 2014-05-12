@@ -26,8 +26,26 @@ public class LoadEntitiesTest extends LocalDatastoreTestCase {
     this.datastore  = getNewStandardObjectDatastore();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void loadEntitiesByKeysInTransaction() throws Exception {
+
+    // create and store a entity
+    storeEntities(6);
+
+    datastore.disassociateAll();
+
+    Set<String> keySet = createKeys(6);
+    Transaction transaction = datastore.beginTransaction();
+
+    Collection<SpaceStation> persistedEntities = datastore.loadAll(SpaceStation.class, keySet).values();
+
+    transaction.commit();
+    assertThat(persistedEntities.size(), Is.is(6));
+
+  }
+
   @Test
-  public void loadEntitiesByKeyOutOfCurrentTransaction() throws Exception {
+  public void loadEntitiesByKeysOutOfCurrentTransaction() throws Exception {
 
     // create and store a entity
     storeEntities(6);

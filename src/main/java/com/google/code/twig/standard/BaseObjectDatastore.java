@@ -1,7 +1,17 @@
 package com.google.code.twig.standard;
 
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
+import com.google.appengine.api.datastore.*;
+import com.google.appengine.api.memcache.AsyncMemcacheService;
+import com.google.appengine.api.memcache.Expiration;
+import com.google.appengine.api.memcache.MemcacheServiceFactory;
+import com.google.code.twig.LoadCommand.CacheMode;
+import com.google.code.twig.ObjectDatastore;
+import com.google.code.twig.Settings;
+import com.google.code.twig.Transactable;
+import com.google.common.base.Predicates;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,29 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceConfig;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.PreparedQuery;
-import com.google.appengine.api.datastore.Query;
-import com.google.appengine.api.datastore.ReadPolicy;
-import com.google.appengine.api.datastore.Transaction;
-import com.google.appengine.api.datastore.TransactionOptions;
-import com.google.appengine.api.memcache.AsyncMemcacheService;
-import com.google.appengine.api.memcache.Expiration;
-import com.google.appengine.api.memcache.MemcacheServiceFactory;
-import com.google.code.twig.LoadCommand.CacheMode;
-import com.google.code.twig.ObjectDatastore;
-import com.google.code.twig.Settings;
-import com.google.code.twig.Transactable;
-import com.google.common.base.Predicates;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Maps;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
 
 
 /**
@@ -677,7 +666,8 @@ public abstract class BaseObjectDatastore implements ObjectDatastore
 				
 				// get entities from the datastore
 				statistics.datastoreGets++;
-				Map<Key, Entity> fromDatastore = service(settings).get(keys);
+        //current transaction is checked for null
+				Map<Key, Entity> fromDatastore = service(settings).get(null, keys);
 
 				putToMemoryAndMemcache(fromDatastore.values(), settings.getCacheMode());
 

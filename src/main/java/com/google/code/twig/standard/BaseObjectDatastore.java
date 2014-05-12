@@ -666,6 +666,7 @@ public abstract class BaseObjectDatastore implements ObjectDatastore
 				
 				// get entities from the datastore
 				statistics.datastoreGets++;
+        //current transaction is checked for null
 				Map<Key, Entity> fromDatastore = service(settings).get(null, keys);
 
 				putToMemoryAndMemcache(fromDatastore.values(), settings.getCacheMode());

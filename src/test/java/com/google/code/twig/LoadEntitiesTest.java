@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * @author Georgi Georgiev (GeorgievJon@gmail.com)
@@ -23,7 +24,7 @@ public class LoadEntitiesTest extends LocalDatastoreTestCase {
   @Before
   public void createDatastore() {
     super.setupDatastore();
-    this.datastore  = getNewStandardObjectDatastore();
+    this.datastore  = createDatastoreInstance();
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -37,15 +38,18 @@ public class LoadEntitiesTest extends LocalDatastoreTestCase {
     Set<String> keySet = createKeys(6);
     Transaction transaction = datastore.beginTransaction();
 
-    Collection<SpaceStation> persistedEntities = datastore.loadAll(SpaceStation.class, keySet).values();
+    try {
+      datastore.loadAll(SpaceStation.class, keySet).values();
+    } catch (IllegalArgumentException e ) {
+      transaction.rollback();
+      throw e;
+    }
 
-    transaction.commit();
-    assertThat(persistedEntities.size(), Is.is(6));
-
+    fail("missing exception");
   }
 
   @Test
-  public void loadEntitiesByKeysOutOfCurrentTransaction() throws Exception {
+  public void loadUsingAnotherInstanceOutOfTheTransaction() throws Exception {
 
     // create and store a entity
     storeEntities(6);
@@ -55,9 +59,9 @@ public class LoadEntitiesTest extends LocalDatastoreTestCase {
     Set<String> keySet = createKeys(6);
     Transaction transaction = datastore.beginTransaction();
 
-    StandardObjectDatastore newDatastore = getNewStandardObjectDatastore();
+    StandardObjectDatastore newDatastoreInctance = createDatastoreInstance();
 
-    Collection<SpaceStation> persistedEntities = newDatastore.loadAll(SpaceStation.class, keySet).values();
+    Collection<SpaceStation> persistedEntities = newDatastoreInctance.loadAll(SpaceStation.class, keySet).values();
 
     transaction.commit();
     assertThat(persistedEntities.size(), Is.is(6));

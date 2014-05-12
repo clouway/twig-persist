@@ -23,7 +23,7 @@ public abstract class LocalDatastoreTestCase {
     helper.tearDown();
   }
 
-  public StandardObjectDatastore getNewStandardObjectDatastore() {
+  public StandardObjectDatastore createDatastoreInstance() {
     Settings settings = Settings.builder().build();
     return new StandardObjectDatastore(settings, new AnnotationConfiguration(), 1000, true);
   }

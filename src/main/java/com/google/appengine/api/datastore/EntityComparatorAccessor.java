@@ -1,15 +1,36 @@
 package com.google.appengine.api.datastore;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import com.google.appengine.api.datastore.PreparedMultiQuery.EntityComparator;
 import com.google.appengine.api.datastore.Query.SortPredicate;
+import com.google.apphosting.api.DatastorePb.Query.Order;
+import com.google.appengine.api.datastore.Query.SortDirection;
 
 public class EntityComparatorAccessor
 {
 	public static Comparator<Entity> newEntityComparator(List<SortPredicate> sorts)
 	{
-		return new EntityComparator(sorts);
+
+    List<Order> orders = new ArrayList<Order>();
+
+    for (SortPredicate sort : sorts) {
+
+      SortDirection sortDirection = sort.getDirection();
+
+      Order order = new Order();
+
+      if (sortDirection.equals(SortDirection.ASCENDING)) {
+        order.setDirection(Order.Direction.ASCENDING);
+
+      } else if (sortDirection.equals(SortDirection.DESCENDING)) {
+        order.setDirection(Order.Direction.DESCENDING);
+      }
+
+      orders.add(order);
+    }
+
+    return new EntityComparator(orders);
 	}
 }

@@ -46,6 +46,6 @@ public class Conversion extends LocalDatastoreTestCase
 		
 		ClassWithString loaded = loadWith.load(key);
 		
-		assert loaded.value == "9";
+		assert loaded.value.equals("9");
 	}
 }

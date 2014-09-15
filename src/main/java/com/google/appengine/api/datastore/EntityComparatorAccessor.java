@@ -21,10 +21,10 @@ public class EntityComparatorAccessor
 
       Order order = new Order();
 
-      if (sortDirection.equals(SortDirection.ASCENDING)) {
+      if (SortDirection.ASCENDING.equals(sortDirection)) {
         order.setDirection(Order.Direction.ASCENDING);
 
-      } else if (sortDirection.equals(SortDirection.DESCENDING)) {
+      } else if (SortDirection.DESCENDING.equals(sortDirection)) {
         order.setDirection(Order.Direction.DESCENDING);
       }
 

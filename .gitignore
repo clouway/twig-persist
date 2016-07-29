@@ -10,3 +10,6 @@ WEB-INF/appengine-generated
 .classpath
 .project
 .idea
+*.iml 
+*.ipr
+*.iws

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_487a6cbe",
+        "filename": "README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1005960
+      },
+      "writtenOn": "2016-07-30T06:22:12Z",
+      "side": 1,
+      "message": "You have to remove these empty lines.",
+      "revId": "f573fc13ba7f4df4cedafc6a7df3c84bc51b76d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

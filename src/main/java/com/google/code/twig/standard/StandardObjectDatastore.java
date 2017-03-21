@@ -97,6 +97,20 @@ public class StandardObjectDatastore extends TranslatorObjectDatastore
 		}
 		return converter;
 	}
+
+
+	public void resetTypeConverters() {
+		registry = createStaticConverterRegistry();
+		// these are added for every OD instance
+		ChainedTypeConverter chain = new ChainedTypeConverter();
+		chain.add(registry);
+		chain.add(new CollectionTypeConverter(chain));
+		chain.add(new IterableToArray(chain));
+		chain.add(new ArrayToIterable(chain));
+		chain.add(new IterableToFirstElement());
+
+		converter = chain;
+	}
 	
 	@Override
 	protected ChainedTranslator createValueTranslatorChain()

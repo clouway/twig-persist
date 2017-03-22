@@ -34,85 +34,48 @@ public class StandardObjectDatastore extends TranslatorObjectDatastore
 {
 	static final Logger log = Logger.getLogger(StandardObjectDatastore.class.getName());
 
-	public StandardObjectDatastore(Settings settings, Configuration strategy, int activation, boolean index)
-	{
-		super(settings, strategy, activation, index);
+	public StandardObjectDatastore(Settings settings, Configuration strategy, int activation, boolean index) {
+		super(settings, strategy, activation, index, null);
 	}
 
-	protected ConverterRegistry createStaticConverterRegistry()
-	{
-		CombinedTypeConverter converter = new CombinedTypeConverter();
-
-		converters(converter, new NumberConverters());
-		converters(converter, new EngineConverters());
-		converters(converter, new CoreConverters());
-		converters(converter, new DateConverters());
-		converters(converter, new StringToPrimitive());
-
-		converter.register(new ObjectToString());
-		MapConverters.registerAll(converter);
-
-		return converter;
+	public StandardObjectDatastore(Settings settings, Configuration strategy, int activation, boolean index, ConverterRegistry converterRegistry) {
+		super(settings, strategy, activation, index, converterRegistry);
 	}
 
-	private void converters(ConverterRegistry combined, Iterable<Converter<?,?>> converters)
-	{
-		for (Converter<?, ?> converter : converters)
-		{
-			combined.register(converter);
-		}
-	}
-
-	// volatile to allow double checked locking
-	private volatile static ConverterRegistry registry;
-	
 	private TypeConverter converter;
 
-	@Override
-	public TypeConverter getTypeConverter()
-	{
-		if (converter == null)
-		{
-			// TODO problem if more than one subclass - set converters in constructor
-			if (registry == null)
-			{
-				synchronized (this)
-				{
-					if (registry == null)
-					{
-						registry = createStaticConverterRegistry();
-					}
-				}
-			}
-			
-			// these are added for every OD instance
-			ChainedTypeConverter chain = new ChainedTypeConverter();
-			chain.add(registry);
-			chain.add(new CollectionTypeConverter(chain));
-			chain.add(new IterableToArray(chain));
-			chain.add(new ArrayToIterable(chain));
-			chain.add(new IterableToFirstElement());
-			
-			converter = chain;
-		}
-		return converter;
-	}
+  @Override
+  public TypeConverter getTypeConverter() {
+    if (converter == null) {
+
+      // these are added for every OD instance
+      ChainedTypeConverter chain = new ChainedTypeConverter();
+      chain.add(registry);
+      chain.add(new CollectionTypeConverter(chain));
+      chain.add(new IterableToArray(chain));
+      chain.add(new ArrayToIterable(chain));
+      chain.add(new IterableToFirstElement());
+
+      converter = chain;
+    }
+    return converter;
+  }
 	
 	@Override
 	protected ChainedTranslator createValueTranslatorChain()
 	{
 		ChainedTranslator result = new ChainedTranslator();
-		
+
 		// types that will be translated to datastore types automatically
 		result.append(new NativeDirectTranslator(registry));
-		
+
 		// use a converter to convert to a native type
 		result.append(new ConverterTranslator(Class.class, String.class, registry));
 		result.append(new ConverterTranslator(URL.class, String.class, registry));
 		result.append(new ConverterTranslator(URI.class, String.class, registry));
 		result.append(new ConverterTranslator(Locale.class, String.class, registry));
 		result.append(new ConverterTranslator(Currency.class, String.class, registry));
-		
+
 		// encode enums as their string name
 		result.append(new EnumTranslator());
 		

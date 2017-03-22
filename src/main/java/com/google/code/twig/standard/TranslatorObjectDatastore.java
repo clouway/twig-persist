@@ -21,6 +21,9 @@ import com.google.code.twig.PropertyTranslator;
 import com.google.code.twig.Settings;
 import com.google.code.twig.annotation.Root;
 import com.google.code.twig.configuration.Configuration;
+import com.google.code.twig.conversion.CoreConverters;
+import com.google.code.twig.conversion.EngineConverters;
+import com.google.code.twig.conversion.MapConverters;
 import com.google.code.twig.translator.ChainedTranslator;
 import com.google.code.twig.translator.FieldTranslator;
 import com.google.code.twig.translator.PolymorphicTranslator;
@@ -34,7 +37,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.vercer.convert.TypeConverter;
+import com.vercer.convert.*;
 
 /**
  * TODO split this into a base impl with caching, activation etc and the translator
@@ -103,12 +106,19 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 
 	private final Configuration configuration;
 
-	public TranslatorObjectDatastore(Settings settings, Configuration configuration, int activation, boolean index)
+	// volatile to allow double checked locking
+	protected volatile ConverterRegistry registry;
+
+	public TranslatorObjectDatastore(Settings settings, Configuration configuration, int activation, boolean index, ConverterRegistry registry)
 	{
 		super(settings);
 		this.configuration = configuration;
 		defaultActivationDepth = activation;
 		defaultIndexFields = index;
+		if(registry == null){
+			registry = createStaticConverterRegistry();
+		}
+		this.registry = registry;
 
 		this.thread = Thread.currentThread();
 		
@@ -795,6 +805,29 @@ public abstract class TranslatorObjectDatastore extends BaseObjectDatastore
 		if (!isActivated(instance))
 		{
 			throw new IllegalStateException("Use activate for unactivated instance " + instance);
+		}
+	}
+
+	protected ConverterRegistry createStaticConverterRegistry() {
+		CombinedTypeConverter converter = new CombinedTypeConverter();
+
+		converters(converter, new NumberConverters());
+		converters(converter, new EngineConverters());
+		converters(converter, new CoreConverters());
+		converters(converter, new DateConverters());
+		converters(converter, new StringToPrimitive());
+
+		converter.register(new ObjectToString());
+		MapConverters.registerAll(converter);
+
+		return converter;
+	}
+
+	private void converters(ConverterRegistry combined, Iterable<Converter<?,?>> converters)
+	{
+		for (Converter<?, ?> converter : converters)
+		{
+			combined.register(converter);
 		}
 	}
 
